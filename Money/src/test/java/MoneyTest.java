@@ -1,5 +1,9 @@
+import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.*;
 
 /*
@@ -9,50 +13,54 @@ import static org.junit.jupiter.api.Assertions.*;
         Equal null
         Equal object
         hasCode()
+        통화?
+        FrancMultiplicationTest 지워야하나?
     COMPLETE:
         amount를 private로
         $5 * 2 = $10
-        Dollar 부작용
+        Money 부작용
         5CHF * 2 = 10CHF
         공용 equals
+        Franc과 Dollar 비교
 
 
  */
 class MoneyTest {
 
     @Test
-    void multiplicationTest(){
+    void multiplicationWithSideEffectTest(){
         //$5 * 2 = $10
         //Dollar의 부작용
         Dollar five = new Dollar(5);
         five.timesDirectToAmount(2);
-        assertEquals(10, five.amount);
+        assertThat(10, is(five.amount));
         five.timesDirectToAmount(3);
-        assertNotEquals(15, five.amount);
+        assertThat(15, is(not(five.amount)));
     }
 
     @Test
-    void multiplicationWithoutSideEffectTest(){
-        Dollar five = new Dollar(5);
-//        Dollar product = five.times(2);
-        assertEquals(new Dollar(10), five.times(2));
-//        product = five.times(3);
-        assertEquals(new Dollar(15), five.times(3));
+    void multiplicationTest(){
+        Money five = Money.dollar(5);
+        assertThat(Money.dollar(10), is(five.times(2)));
+        assertThat(Money.dollar(15), is(five.times(3)));
     }
 
     @Test
     void equalityTest(){
         //equals
-        assertEquals(new Dollar(5), new Dollar(5));
-        assertNotEquals(new Dollar(5), new Dollar(6));
-        assertEquals(new Franc(5), new Franc(5));
-        assertNotEquals(new Franc(5), new Franc(6));
+        assertThat(Money.dollar(5), is(Money.dollar(5)));
+        assertThat(Money.dollar(5), is(not(Money.dollar(6))));
+        assertThat(Money.franc(5), is(Money.franc(5)));
+        assertThat(Money.franc(5), is(not(Money.franc(6))));
+
+        //equals to different currency
+        assertThat(Money.franc(5), is(not(Money.dollar(5))));
     }
 
     @Test
     void francMultiplicationTest(){
-        Franc five = new Franc(5);
-        assertEquals(new Franc(10), five.times(2));
-        assertEquals(new Franc(15), five.times(3));
+        Money five = Money.franc(5);
+        assertThat(Money.franc(10), is(five.times(2)));
+        assertThat(Money.franc(15), is(five.times(3)));
     }
 }
