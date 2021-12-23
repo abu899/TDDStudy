@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
         $5 * 2 = $10
         Dollar 부작용
         5CHF * 2 = 10CHF
+        공용 equals
 
 
  */
@@ -44,6 +45,8 @@ class MoneyTest {
         //equals
         assertEquals(new Dollar(5), new Dollar(5));
         assertNotEquals(new Dollar(5), new Dollar(6));
+        assertEquals(new Franc(5), new Franc(5));
+        assertNotEquals(new Franc(5), new Franc(6));
     }
 
     @Test
