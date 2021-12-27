@@ -1,4 +1,4 @@
-class Money {
+class Money implements Expression{
     protected int amount;
     protected String currency;
 
@@ -35,5 +35,9 @@ class Money {
 
     public String toString() {
         return amount + " " + currency;
+    }
+
+    public Expression plus(Money money) {
+        return new Money(amount + money.amount, currency);
     }
 }
