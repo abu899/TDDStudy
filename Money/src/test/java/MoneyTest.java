@@ -2,19 +2,16 @@ import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /*
     TODO:
-        $5 + $5에서 Money 반환하기
         Money 반올림
         Equal null
         Equal object
         hasCode()
         Dollar/Franc 중복
-        Sum.plus
         Expression.times
     COMPLETE:
         amount를 private로
@@ -29,6 +26,8 @@ import static org.junit.jupiter.api.Assertions.*;
         Bank.reduce(Money)
         $5 + 10CHF = $10(환율이 2:1일 경우)
         $5 + $5 = $10
+        Sum.plus
+        $5 + $5에서 Money 반환하기
 
 
 
@@ -72,7 +71,7 @@ class MoneyTest {
     }
 
     @Test
-    void plusReturnSumTest(){
+    void plusReturnSumTest() {
         Money five = Money.dollar(5);
         Expression result = five.plus(five);
         Sum sum = (Sum) result;
@@ -96,7 +95,7 @@ class MoneyTest {
     }
 
     @Test
-    void reduceMoneyDifferentCurrencyTest(){
+    void reduceMoneyDifferentCurrencyTest() {
         //currency rate -> 1USD : 2CHF
         Bank bank = new Bank();
         bank.addRate("CHF", "USD", 2);
@@ -119,4 +118,25 @@ class MoneyTest {
         assertThat(result, is(Money.dollar(10)));
     }
 
+    @Test
+    void sumPlusTest() {
+        Expression fiveDollars = Money.dollar(5);
+        Expression tenFrancs = Money.franc(10);
+        Bank bank = new Bank();
+        bank.addRate("CHF", "USD", 2);
+        Expression sum = new Sum(fiveDollars, tenFrancs).plus(fiveDollars);
+        Money result = bank.reduce(sum, "USD");
+        assertThat(result, is(Money.dollar(15)));
+    }
+
+    @Test
+    void sumTimesTest() {
+        Expression fiveDollars = Money.dollar(5);
+        Expression tenFrancs = Money.franc(10);
+        Bank bank = new Bank();
+        bank.addRate("CHF", "USD", 2);
+        Expression sum = new Sum(fiveDollars, tenFrancs).times(2);
+        Money result = bank.reduce(sum, "USD");
+        assertThat(result, is(Money.dollar(20)));
+    }
 }
