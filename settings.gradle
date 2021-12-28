@@ -1,1 +1,3 @@
 include 'money'
+include 'Pattern'
+
