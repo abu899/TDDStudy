@@ -4,5 +4,5 @@
     사실은 Money 들의 합을 나타내는 객체
  */
 public interface Expression {
-    Money reduce(String to);
+    Money reduce(Bank bank, String to);
 }
