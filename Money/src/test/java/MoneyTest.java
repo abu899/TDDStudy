@@ -8,14 +8,14 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /*
     TODO:
-        $5 + 10CHF = $10(환율이 2:1일 경우)
-        $5 + $5 = $10
         $5 + $5에서 Money 반환하기
         Money 반올림
         Equal null
         Equal object
         hasCode()
         Dollar/Franc 중복
+        Sum.plus
+        Expression.times
     COMPLETE:
         amount를 private로
         $5 * 2 = $10
@@ -27,6 +27,8 @@ import static org.junit.jupiter.api.Assertions.*;
         공용 times
         FrancMultiplicationTest 지워야하나?
         Bank.reduce(Money)
+        $5 + 10CHF = $10(환율이 2:1일 경우)
+        $5 + $5 = $10
 
 
 
@@ -105,6 +107,16 @@ class MoneyTest {
     @Test
     void identityRateTest() {
         assertThat(new Bank().rate("USD", "USD"), is(1));
+    }
+
+    @Test
+    void mixedAdditionTest() {
+        Expression fiveDollars = Money.dollar(5);
+        Expression tenFrancs = Money.franc(10);
+        Bank bank = new Bank();
+        bank.addRate("CHF", "USD", 2);
+        Money result = bank.reduce(fiveDollars.plus(tenFrancs), "USD");
+        assertThat(result, is(Money.dollar(10)));
     }
 
 }
