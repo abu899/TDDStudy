@@ -444,3 +444,246 @@ public void mouseUp(){
 중복 조건문을 플러거블 객체인 SelectionMode로 해결하는 예제.
 - SelectionMode는 SingleSelection과 MultipleSelection의 두가지 구현을 갖는다.
 - Java의 경우 두 플러거블 객체가 동일한 인터페이스를 구현해야한다.
+
+## 플러거블 셀렉터
+
+인스턴스 별로 서로 다른 메서드를 동적으로 호출하려면? <br/>
+&gt; 메서드의 이름을 저장하고 있다가 그 이름에 해당하는 메서드를 동적으로 호출. <br/>
+- 만약 단순한 메서드 하나만 구현하는 하위 클래스가 여러개 있다면 어떻게 해야할까?
+- 이런 작은 변이를 상속으로 하기에는 너무 무거운 방법이다.
+```java
+abstract class Report{
+    abstract void print();
+}
+
+class HTMLReport extends Report{
+    void print() {}
+}
+
+class XMLReport extends Report{
+    void print() {}
+}
+```
+- 한가지 대안은 switch 문을 갖는 하나의 클래스를 이용하는 것으로, 필드의 값에 따라 다른 메서드를 호출하면 된다.
+- 하지만, 메서드의 이름이 세곳에 나뉘어 존재한다는 문제가 있다
+  - 인스턴스 생성하는 곳
+  - swtich 문
+  - 메서드 자체
+- 새로운 종류의 출력을 추가할 때마다, 출력 메서드와 switch 문을 추가해줘야한다.
+```java
+abstract class Report{
+    String printMessage;
+    Report(String printMessage){
+        this.printMessage = printMessage;
+    }
+    void print(){
+        switch(printMessage){
+          case "printHTML":
+              printHTML();
+              break;
+          case "printXML":
+              printXML();
+              break;
+        }
+    }
+    void printHTML(){}
+    void printXML(){}
+}
+```
+- 다른 대안으로는 플러거블 셀렉터을 사용하는 것이다.
+- **리플렉션**을 이용한 이 방법으로 동적으로 메서드를 호출 할 수 있다.
+- 물론 report를 생성하는 곳과 출력 메서드의 이름간의 의존관계가 있지만 switch문을 해결할 수 있다.
+- 하지만 플러거블 셀렉터의 과용에 대해 주의해야한다
+- 가장 큰 문제인 디버깅시 코드 추적의 어려움이 존재하기에 확실히 직관적인 상황에서 정리를 위한 용도로 사용되어야 한다.
+```java
+abstract class Report{
+  String printMessage;
+  Report(String printMessage){
+    this.printMessage = printMessage;
+  }
+  void print(){
+      Method runMethod = getCalss().getMethod(printMessage, null);
+      renMethod.invoke(this, new Class[0]);
+  }
+  void printHTML(){}
+  void printXML(){}
+}
+```
+
+## 팩토리 메서드
+
+새 객체를 만들 때 유연성을 원하는 경우 **생성자를 쓰는 대신 일반 메서드로 객체를 생성**하는 팩토리 메서드를 사용하자.
+- 생성자는 객체를 생성하고 있다는 점을 명시적으로 보여주지만, 표현력과 유연함이 떨어진다.
+- Moeny test를 작성할 때, Money 대신 Dollar를 도입하고자 했지만 Dollar 객체 생성에 대한 의존성 때문에 어려움이 있었다.
+- 그 때, 메서드라는 한 단계의 인디렉션을 추가함으로써 추가적인 코드의 변화 없이 다른 클래스의 인스턴스를 얻는 유연함을 얻을 수 있었다.
+```java
+public void multiplicationTest(){
+    Dollar five = new Dollar(5);
+    assertEquals(new Dollar(10), five.times(2));
+}
+```
+```java
+public void multiplicationTest(){
+    Dollar five = Money.dollar(5); // indirection
+    assertEquals(new Dollar(10), five.times(2));
+}
+
+//Money.java
+static Dollar dollar(int amount){
+    return new Dollar(amount);
+}
+```
+- 팩토리 메서드의 단점은 인디렉션으로, 메서드가 생성자 처럼 생기지 않았지만 내부에 객체 생성이 된다는 사실을 인지해야한다.
+- 유연함이 필요할 때만 팩토리 메서드를 사용하고, 그렇지 않다면 생성자를 사용하자.
+
+## 임포스터
+
+기존 코드에서 **새로운 변화**를 도입하려면 기존 객체와 같은 인터페이스를 갖지만 다른 구현을 가진 객체를 도입하자. 
+TDD 작성 시, 테스트 케이스 하나를 작성하고 새로운 시나리오를 표현해야 하지만 기존 객체 중 어느 것도 내가 원하는걸 표현하지 못할 때,
+임포스터가 사용된다.
+```java
+void rectangleTest(){
+    Drawing d = new Drawing();
+    d.addFigure(new RectangleFigure(0, 100, 50, 100));
+    RecordingMedium brush = new RecordingMedium();
+    d.display(brush);
+    assertEquals("rectangle 0 10 50 100", brush.log());
+}
+```
+```java
+void ovalTest(){
+    Drawing d = new Drawing();
+    d.addFigure(new OvalFigure(0, 100, 50, 100));
+    RecordingMedium brush = new RecordingMedium();
+    d.display(brush);
+    assertEquals("oval 0 10 50 100", brush.log());
+}
+```
+- oval이라는 것을 표현할 때, 전혀 새로운 객체가 아닌 같은 인터페이스를 가진 임포스터를 사용함으로써, 로직의 수정 없이 사용 가능하다.
+- 리팩토링 중 나타나는 임포스터의 두가지
+  - 널 객체 : 데이터가 없는 상태를 데이터가 있는 상태와 동일하게 취급
+  - 컴포지트 : 객체의 집합을 단일 객체처럼 취급
+- 임포스터로 만들 부분을 찾아내는 것은 중복을 제거하는 작업을 통해 유도된다.
+
+## 컴포지트
+
+하나의 객체가 **다른 객체들의 목록의 행위를 조합한 것과 같이 동작**시키기 위한 방법은 무엇일까?
+&gt; 객체 집합을 나타내는 객체를 **단일 객체에 대한 임포스터**로 구현한다!
+```java
+// Transaction.java
+class Transaction{
+    private Money value;
+    Transaction(Money value){
+        this.value = value;
+    }
+}
+```
+```java
+// Account.java
+class Account {
+    private Transcation transactions[];
+    Money balance() {
+        Money sum = Money.zero();
+        for(int i = 0 ; i < transcations.length; ++i){
+            sum = sum.plus(transcations[i].value);
+        }
+        return sum;
+    }
+}
+```
+Transaction은 값을 갖고 Account는 잔액을 갖는다. 만약 고객이 여러 계좌를 가지고 있으며 전체 계좌에 대한
+잔액(Balance)을 알고 싶어 한다면?
+- 가장 간단한 방법은 OverallAccount라는 Account를 모두 가진 새로운 클래스를 만드는 것.
+- 이 경우 Account가 하는 일과 또 다시 중복되므로 좋은 선택은 아니다.
+- 그렇다면 Account와 전체 잔액인 Balance가 같은 인터페이스를 가진다면 어떨까?
+```java
+// Holding.java
+interface Holding {
+    Money balance();
+}
+```
+```java
+// Transaction.java
+class Transaction extends Holding {
+  private Money value;
+  Transaction(Money value){
+    this.value = value;
+  }
+  
+  @Override
+  Money balance(){
+      return value;
+  }
+}
+```
+```java
+// Account.java
+class Account extends Holding {
+  private Holding holdings[];
+  
+  @Override
+  Money balance() {
+    Money sum = Money.zero();
+    for(int i = 0 ; i < holdings.length; ++i){
+      sum = sum.plus(holdings[i].balance());
+    }
+    return sum;
+  }
+}
+```
+- Account는 더이상 Transaction이 아닌 Holding의 컴포지트로 만들 수 있다.
+- Account는 이제 Account를 담을 수 있는 또다른 Account가 된 것이다.(OverallAccount)
+- 실제 세계에서는 transaction에 balance가 존재하지 않지만, 프로그램 설계에서 이러한 개념적 단절은 엄청난 이득이 된다.
+  - 예를들어, Folder는 Folder를 포함하고 TestSuite는 TestSuite를 포함하는 등
+  - 실세계와는 잘 어울리지 않지만 코드를 단순하게 만들 수 있다.
+- 객체의 컬렉션으로 사용하거나 컴포지트로 사용하거나에 대한 기준이 모호하고 적용에 따라 복잡함이 사라짐을 관찰해야한다.
+
+## 수집 매개 변수
+
+여러 객체에 존재하는 결과를 수집할 때 매개 변수로 수집될 객체를 건넬 수 있다.
+수집 매개 변수를 전달 받은 메서드들은 수집 매개 변수에 기록을 전달하고 모든 객체의 결과가 수집된다.
+일반적인 TestResult의 경우 toString()으로 충분히 결과를 대조할 수 있지만, 결과가 복잡해질 수록 수집 매개 변수에대한 필요성이 증가할 것이다.
+```java
+String sumPrintingTest() {
+    Sum sum = new Sum(Money.dollar(5), Money.franc(7));
+    assertEquals("5 USD + 7 CHF", sum.toString());
+}
+```
+```java
+class Sum{
+    @Override
+    String toString() {
+        return augend + " + " + addend;
+    }
+}
+```
+
+<br/>
+
+- 단순한 출력에는 문제없지만, 예를 들어 트리형태로 표현한다면 점점 복잡해지기 시작한다.
+- 그런 경우 아래와 같은 수집 매개 변수를 이용해 결과를 정리할 수 있다.
+```java
+String sumPrintingTest() {
+    Sum sum = new Sum(Money.dollar(5), Money.franc(7));
+    assertEquals("+\n\t5 USD\n\t 7 CHF", sum.toString());
+}
+```
+```java
+class Sum{
+    @Override
+    String toString() {
+      IndentingStream writer = new IndentingStream();
+      toString(writer);
+      return writer.contents();
+    }
+    
+    String toString(IndentingWriter writer) {
+        writer.println("+");
+        writer.indent();
+        augend.toString(writer);
+        writer.println();
+        addend.toString(writer);
+        writer.exdent();
+    }
+}
+```
