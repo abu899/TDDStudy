@@ -147,6 +147,7 @@ return String.format(%d run, %d failed", runCount, failCount);
 ```
 
 ## 삼각측량
+
 추상화 과정을 테스트할 때 보수적으로 할 수 있는 방법은, **예시가 두개 이상일 때만 추상화**하는 것이다.
 - 삼각측량의 장점은 규칙이 명확하다는 것이다.
 - 두개의 assertion이 있고 하나의 함수에 대해 올바른 추상화가 된다면, 반드시 하나를 삭제할 수 있다.]
@@ -228,6 +229,7 @@ public void sum(int[] values){
 # xUnit 패턴
 
 ## 단언(Assertion)
+
 테스트가 제대로 동작하는 검사를 위해선 단언을 작성해야한다.
 - 단언은 구체적으로 작성하자
 ```java
@@ -243,6 +245,7 @@ assertEquals("2022-01-03", contract.startDate()); // running 되었을 때의 �
 ```
 
 ## 픽스쳐(Fixture)
+
 공통으로 사용하는 객체들을 생성할 때는 어떻게 할까?
 - 테스트 코드에서 객체를 세팅하는 코드는 동일한 경우가 있고 이럴때 **픽스쳐**를 사용한다.
   - JUnit의 BeforeAll, BeforeEach 
@@ -252,6 +255,7 @@ assertEquals("2022-01-03", contract.startDate()); // running 되었을 때의 �
 - [Junit Annotation Link](https://junit.org/junit5/docs/current/user-guide/#writing-tests-annotations)
 
 ## 예외 테스트
+
 예외가 발생하는 것이 정상인 경우에 대한 테스트
 - OutOfMemory class 및 Crash test dummy 예제 참조
 
@@ -298,6 +302,7 @@ assertEquals("2022-01-03", contract.startDate()); // running 되었을 때의 �
 | 수집 매개 변수 |   O    |  O   |
 
 ## 커맨드
+
 보통 복잡한 계산 작업 호출은 **비싼 메커니즘**을 필요로 하며, 대부분의 경우 이런 복잡함이 모두에게 요구되지 않는다.
 - 메소드로 호출하는 것보다 구체적이고 조작하기 쉬우려면 객체가 해답이 된다.
 - 호출 자체를 객체로 표현하고 계산에 필요한 모든 매개 변수들을 초기화한다.
@@ -309,6 +314,7 @@ interface Runnable{
 ```
 
 ## 값 객체
+
 널리 공유해야 하지만 동일성은 중요하지 않을 때는 어떻게 해야할까? <br/>
  &gt; 객체가 생성될 때 객체의 상태를 설정하고 절대 변할 수 없도록 하자.
 
@@ -330,3 +336,111 @@ interface Runnable{
     - 5달러 지폐가 두 장이 각각 존재하더라도 본질적으로 두개는 모두 5달러로 같은 것이여한다.
     - Money package의 fran과 dolloar 예제 참조
   - 교차하거나 합해지는 모양, 단위 값, 기호대수학 등에 대해 값 객체를 시도해보자.
+
+## 널 객체
+
+객체의 **특별한 상황**을 표현할 때 새로운 객체를 만든다.
+- 이 객체는 정상적인 상황을 나타내는 객체와 **동일한 인터페이스**를 갖는다(또는 하위 클래스)
+- 조건문 한 줄을 제거하기 위해 널 객체를 도입할 수 있지만 같은 인터페이스르 만들어줘야하므로, 코드량이 늘어날 수 있다.
+- 예시는 readOnly를 설정할 때 SecurityManager를 확인하는 조건문을 LaxSecurity라는 널 객체를 통해 표현하는 것이다.
+```java
+// File.java
+public boolean setReadOnly(){
+        SecurityManager guard = System.getSecurityManager();
+        if(guard != null){ //null 인 경우를 LaxSecurity null객체로 대체한다.
+            guard.canWrite(path);
+        }
+        return fileSystem.setReadOnly(this);
+}
+```
+```java
+// LaxSecurity.java
+public void canWrite(String path){
+}
+```
+```java
+// SecurityManger.java
+public static SecurityManager getSecurityManager(){
+    return security == null ? new LaxSecurity() : security;
+}
+```
+```java
+// File.java
+public boolean setReadOnly(){
+        SecurityManager guard = System.getSecurityManager();
+        guard.canWrite(path);
+        return fileSystem.setReadOnly(this);
+}
+```
+
+## 템플릿 메서드
+
+작업 순서는 변하지 않지만 미래의 작업에서 실제 구현을 통해 개선 가능성을 열어둬야할 경우 사용한다.
+다른 메서드들을 호출하는 내용으로만 이루어진 메서드를 만든다.
+- 작업의 순서는 상위 클래스에서 정하고 다른 메서드를 호출하는 내용으로만 이루어진 메서드를 만든다.
+- 하위 크래스는 이 각각의 메서드를 상속받아 서로 다른 방식으로 구현한다.
+- 한 가지 문제는 하위 클래스를 위한 기본 구현을 제공할지 정하는 것이다.
+- 보통 템플릿 메서드는 초기 설계보다 구현 중 경험에 의해 변경되는 경우가 많다.
+  - 따라서 리팩토링 시, 상세한 구현부분과 진짜로 변하는 부분을 분리하는 작업이 중요하다.
+```java
+// TestCase.java
+public void runBare() throws Throwable{
+    setUp();
+    try{
+        runTest();
+    } finally {
+        tearDown();
+    }
+}
+```
+
+## 플러거블 객체
+
+어떤 **상태나 객체의 변화**를 표현하는 확인하는 가장 간단한 방법은 **조건문**을 사용하는 것이다.
+하지만, 명시적인 조건문을 사용하게 되면 조만간 수많은 조건문들이 퍼져나가게 되고 가독성과 성능저하로 이어질 수 있다.<br/>
+따라서, 조건문이 반복되는 상황에서 플러거블 객체를 활요할 수 있다.
+```java
+Figure selected;
+public void mouseDown(){
+    selected = findFigure();
+    if(selected != null){
+        select(selected);
+    }
+}
+
+public void mouseMove(){
+        if(selected != null){
+            move(selected);
+        } else {
+            moveSelectionRectangle();
+        }
+}
+
+public void mouseUp(){
+        if(selected == null){
+            selectAll();
+        }
+}
+```
+```java
+SelectionMode mode;
+public void mouseDown(){
+    selected = findFigure();
+    if(selected != null){
+        mode = SingleSelection(selected);
+    } else{
+        mode = MultipleSelection();
+    }
+}
+
+public void mouseMove(){
+    mode.mouseMove();
+}
+
+public void mouseUp(){
+    mode.mouseUp();
+}
+```
+중복 조건문을 플러거블 객체인 SelectionMode로 해결하는 예제.
+- SelectionMode는 SingleSelection과 MultipleSelection의 두가지 구현을 갖는다.
+- Java의 경우 두 플러거블 객체가 동일한 인터페이스를 구현해야한다.
